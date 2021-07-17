@@ -1,0 +1,104 @@
+body{
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+
+table,td{
+    border: 1px solid black;
+}
+table{
+    width: 100vmin;
+    height: 100vmin;
+    margin: auto;
+    border: 1px solid;
+    
+    
+}
+tr{
+ 
+    text-align: center;
+}
+td{
+    width: 11vmin;
+    height: 11vmin;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}
+
+tr:nth-of-type(odd) td:nth-of-type(odd){
+    background-color:#353839;
+}
+tr:nth-of-type(even) td:nth-of-type(even){
+    background-color:#353839;
+}
+.bp {
+    background-image:url("/images/Chess_bP.png");
+    cursor: pointer;
+}
+.wp{
+    background-image:url("/images/Chess_wP.png");
+    cursor: pointer;
+}
+.br {
+    background-image:url("/images/Chess_bR.png");
+    cursor: pointer;
+}
+.wr{
+    background-image:url("/images/Chess_wR.png");
+    cursor: pointer;
+}
+.bb {
+    background-image:url("/images/Chess_bB.png");
+    cursor: pointer;
+}
+.wb{
+    background-image:url("/images/Chess_wB.png");
+    cursor: pointer;
+}
+.bk {
+    background-image:url("/images/Chess_bK.png");
+    cursor: pointer;
+}
+.wk{
+    background-image:url("/images/Chess_wK.png");
+    cursor: pointer;
+}
+.bn {
+    background-image:url("/images/Chess_bN.png");
+    cursor: pointer;
+}
+.wn{
+    background-image:url("/images/Chess_wN.png");
+    cursor: pointer;
+}
+.bq {
+    background-image:url("/images/Chess_bQ.png");
+    cursor: pointer;
+}
+.wq{
+    background-image:url("/images/Chess_wQ.png");
+    cursor: pointer;
+}
+#active{
+    background-color:yellow;
+}
+.possibleMoves{
+    background-image:url("/images/possible_moves.png");
+    cursor: pointer;
+}
+.possibleEats{
+    background-color:rgb( 248, 0, 194)!important;
+   
+}
+#previousPosition{
+    background-color:rgba(104, 138, 79, 0.555);
+}
+#currentPosition{
+    background-color:rgba(89, 187, 8, 0.555);
+}
+.kingIsChecked{
+    background-color:rgba(71, 17, 172, 0.897)!important;
+}
