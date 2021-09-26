@@ -9,7 +9,11 @@ let WhiteLeftRockHasMoved = false;
 let WhiteRightRockHasMoved = false;
 let BlackLeftRockHasMoved = false;
 let BlackRightRockHasMoved = false;
-let kingMoves = [false, false, false, false, false, false, false, false]
+let kingMoves = [false, false, false, false, false, false, false, false];
+let kingsEnemies = [];
+let possibleMovesForCheckedKing = [];
+let possibleMoves = [];
+let castlingEnabled = false;
 
 
 
@@ -68,7 +72,7 @@ for (let i = 0; i < 8; i++) {
 
 function buttonClick(e){
     if(e.target.classList.contains("possibleMoves") || e.target.classList.contains("possibleEats")){
-        
+
         if(document.getElementById("previousPosition")){
             document.getElementById("previousPosition").removeAttribute("id");
             document.getElementById("currentPosition").removeAttribute("id");
@@ -76,22 +80,54 @@ function buttonClick(e){
         
         e.target.removeAttribute("class");
         e.target.classList.add(document.getElementById("active").classList[0]);
-        
-        
+
+
         if(document.getElementById("active").className[1] == "r"){
-            if( document.getElementById("active").cellIndex === 0 && document.getElementById("active").parentElement.rowIndex === 7) WhiteLeftRockHasMoved = true;
-            if( document.getElementById("active").cellIndex === 7 && document.getElementById("active").parentElement.rowIndex === 7) WhiteRightRockHasMoved = true;
-            if( document.getElementById("active").cellIndex === 0 && document.getElementById("active").parentElement.rowIndex === 0) BlackLeftRockHasMoved = true;
-            if( document.getElementById("active").cellIndex === 7 && document.getElementById("active").parentElement.rowIndex === 0) BlackRightRockHasMoved = true;
+            if(!BlackKingHasMoved){
+                if(!whiteTurn && (!BlackLeftRockHasMoved || !BlackRightRockHasMoved)){
+                    if(table.rows[0].cells[0].id === "active") BlackLeftRockHasMoved = true;
+                    if(table.rows[0].cells[7].id === "active") BlackRightRockHasMoved = true;
+                }
+            }
+            if(!WhiteKingHasMoved){
+                if(whiteTurn && (!WhiteLeftRockHasMoved || !WhiteRightRockHasMoved)){
+                    if(table.rows[7].cells[0].id === "active") WhiteLeftRockHasMoved = true;
+                    if(table.rows[7].cells[7].id === "active") WhiteRightRockHasMoved = true;
+                }
+            }
         }
-        if(document.getElementById("active").className[1] == "k"){
-            if( document.getElementById("active").cellIndex === 4 && document.getElementById("active").parentElement.rowIndex === 0) BlackKingHasMoved = true;
-            if( document.getElementById("active").cellIndex === 4 && document.getElementById("active").parentElement.rowIndex === 7) WhiteKingHasMoved = true;
+
+        if(document.getElementById("active").className[1] === "k"){
+            if(castlingEnabled){
+                if(whiteTurn && !WhiteKingHasMoved){
+                    if (e.target.parentElement.rowIndex === 7 && e.target.cellIndex === 6) {
+                        table.rows[7].cells[7].removeAttribute("class");
+                        table.rows[7].cells[5].classList.add("wr"); 
+                    }
+                    else if(e.target.parentElement.rowIndex === 7 && e.target.cellIndex === 2) {
+                        table.rows[7].cells[0].removeAttribute("class");
+                        table.rows[7].cells[3].classList.add("wr"); 
+                    }
+                }else if(!whiteTurn && !BlackKingHasMoved){
+                    if (e.target.parentElement.rowIndex === 0 && e.target.cellIndex === 6) {
+                        table.rows[0].cells[7].removeAttribute("class");
+                        table.rows[0].cells[5].classList.add("br"); 
+                    }
+                    else if(e.target.parentElement.rowIndex === 0 && e.target.cellIndex === 2) {
+                        table.rows[0].cells[0].removeAttribute("class");
+                        table.rows[0].cells[3].classList.add("br"); 
+                    }
+                }
+            }
+            
+            if(table.rows[0].cells[4].id === "active") BlackKingHasMoved = true;
+            else if(table.rows[7].cells[4].id === "active") WhiteKingHasMoved = true;
+            
         }
-        document.getElementById("active").removeAttribute("class");
+        
+        document.getElementById("active").classList.remove(document.getElementById("active").classList[0]);
         document.getElementById("active").id ="previousPosition";
         e.target.id = "currentPosition";
-        
         
         if(whiteTurn){
             checksIfKingsAreChecked("black");
@@ -100,49 +136,58 @@ function buttonClick(e){
         else {
             checksIfKingsAreChecked("white");
             whiteTurn = true;
+        }          
+    }
+    else if(e.target.className.length === 0 || (whiteTurn && e.target.className[0] === "b") || (!whiteTurn && e.target.className[0] === "w")){
+        if(document.getElementById("active")){
+            document.getElementById("active").removeAttribute("id");
+            document.querySelectorAll('td').forEach(td => {
+                td.classList.remove("possibleMoves","possibleEats");     
+            });
         }
-        
-          
-    }
-    document.querySelectorAll('td').forEach(td => {
-        td.classList.remove("possibleMoves","possibleEats");   
-    });
-    
-    
-    if(document.getElementById("active")) document.getElementById("active").removeAttribute("id");
-    
-    if(e.target.className.length === 0 || (whiteTurn && e.target.className[0] === "b") || (!whiteTurn && e.target.className[0] === "w")){
-        return;
-    }
+    } 
+    else if(BlackKingChecked || WhiteKingChecked){
+        findPossibleMovesForCheckedKing();
+        getPossibleMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.classList[0]);
+        document.querySelectorAll('td.possibleMoves').forEach(td => {
+            possibleMoves.push({"x": td.cellIndex,"y": td.parentElement.rowIndex});   
+        });
 
-    e.target.id = "active";
-    if(BlackKingChecked || WhiteKingChecked) showPossibleMovesForCheckedKing();
-    else possibleMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.classList[0])
+        let results = possibleMoves.filter(o1 => !possibleMovesForCheckedKing.some(o2 => o1.x === o2.x && o1.y === o2.y));
+        for(var result of results){
+            tr[result.y].cells[result.x].classList.remove("possibleMoves");
+        }
 
+        document.querySelectorAll('td.possibleEats').forEach(td => {
+            for(var kingEnemy of kingsEnemies){
+                if(kingEnemy.x !== td.cellIndex || kingEnemy.y !== td.parentElement.rowIndex ) td.classList.remove("possibleEats");
+            }     
+        });
+
+    }
+    else if(e.target.id === "active") return;
+    else {
+        if(document.getElementById("active")){
+            document.getElementById("active").removeAttribute("id");
+            document.querySelectorAll('td').forEach(td => {
+                td.classList.remove("possibleMoves","possibleEats");   
+            });
+        }
+        e.target.id = "active";
+        if(kingIsCheckedAfterThisPieceMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.className)) return;
+        else getPossibleMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.classList[0]);
+    }
 }
 
-function possibleMoves(x,y,piece){
-
+function getPossibleMoves(x,y,piece){
+    // if(whiteTurn && WhiteKingChecked  || !whiteTurn && BlackKingChecked) return;
     if(piece === "wp"){
-        tr[y].cells[x].removeAttribute("class");
-        whiteTurn = false;
-        checksIfKingsAreChecked("white");
-        tr[y].cells[x].classList.add(piece);
-        whiteTurn = true;
+        if(tr[y-1] === undefined) return;
         if(y == 6) moves = 3;
         else moves = 2;
         for (let i = 1; i < moves; i++) {
-            if(WhiteKingChecked || tr[y-i].cells[x].className.length != 0 ){    
-                WhiteKingChecked = false;
-                document.querySelector(".wk").classList.remove("kingIsChecked");
-                break;
-            }
-            else{
-                tr[y-i].cells[x].classList.add("possibleMoves");
-            }
-            
-            
-              
+            if(tr[y-i].cells[x].classList.length !== 0) break;
+            else tr[y-i].cells[x].classList.add("possibleMoves");    
         }
         if(x != 0){ 
             if(tr[y-1].cells[x-1].className[0] === "b") tr[y-1].cells[x-1].classList.add("possibleEats");
@@ -151,11 +196,12 @@ function possibleMoves(x,y,piece){
             if(tr[y-1].cells[x+1].className[0] === "b") tr[y-1].cells[x+1].classList.add("possibleEats");
         }
     }else if(piece === "bp"){
+        if(tr[y+1] === undefined) return;
         if(y == 1) moves = 3;
         else moves = 2;
         for (let i = 1; i < moves; i++) {
-            if(tr[y+i].cells[x].className.length !=0) break;
-            tr[y+i].cells[x].classList.add("possibleMoves");  
+            if(tr[y+i].cells[x].classList.length !== 0) break;
+            else tr[y+i].cells[x].classList.add("possibleMoves");  
         }
         if(x != 0) {
             if(tr[y+1].cells[x-1].className[0] === "w") tr[y+1].cells[x-1].classList.add("possibleEats");
@@ -191,12 +237,10 @@ function possibleMoves(x,y,piece){
         for (let i = 0; i < kingMoves.length; i++) {
             kingMoves[i] = false; 
         }
-        
-        
-
+       
         if(piece === "wk") {
             opponents = ".br,.bn,.bb,.bq";
-            if(tr[y].cells[x+1] !== undefined && tr[y].cells[x+1].classList.contains("bp") ||tr[y].cells[x-1] !== undefined && tr[y].cells[x-1].classList.contains("bp")) kingMoves[4] = true;
+            if(tr[y].cells[x+1] !== undefined && tr[y].cells[x+1].classList.contains("bp") || tr[y].cells[x-1] !== undefined && tr[y].cells[x-1].classList.contains("bp")) kingMoves[4] = true;
             if(tr[y].cells[x-2] !== undefined && tr[y].cells[x-2].classList.contains("bp")) kingMoves[5] = true;
             if(tr[y].cells[x+2] !== undefined && tr[y].cells[x+2].classList.contains("bp")) kingMoves[3] = true;
             if(tr[y-1] !== undefined){
@@ -226,7 +270,7 @@ function possibleMoves(x,y,piece){
         }
 
         document.querySelectorAll(opponents).forEach(opponent => {
-            possibleMoves(opponent.cellIndex,opponent.parentElement.rowIndex,opponent.classList[0]);
+            getPossibleMoves(opponent.cellIndex,opponent.parentElement.rowIndex,opponent.classList[0]);
             if(y > 0){
                 if(!kingMoves[0] && tr[y-1].cells[x].classList.contains("possibleMoves")) kingMoves[0] = true;
                 if(x > 0) {
@@ -288,7 +332,8 @@ function possibleMoves(x,y,piece){
                 if(!kingMoves[1]) tr[y-1].cells[x+1].classList.add("possibleMoves");
                 if(!kingMoves[2]) tr[y].cells[x+1].classList.add("possibleMoves");
             }
-        }if(y < 7){
+        }
+        if(y < 7){
             if(!kingMoves[4]) tr[y+1].cells[x].classList.add("possibleMoves");
             if(x > 0) {
                 if(!kingMoves[5]) tr[y+1].cells[x-1].classList.add("possibleMoves");
@@ -298,8 +343,62 @@ function possibleMoves(x,y,piece){
                 if(!kingMoves[3]) tr[y+1].cells[x+1].classList.add("possibleMoves");
                 if(!kingMoves[2]) tr[y].cells[x+1].classList.add("possibleMoves");
             }
-        }  
+        }
+        if(whiteTurn && !WhiteKingHasMoved || !whiteTurn && !BlackKingHasMoved) castling(y);
+          
     }document.querySelectorAll('.possibleMoves').forEach(td => regulatesMoves(td));
+}
+
+function regulatesMoves(td){
+    if((whiteTurn && td.className[0]==="w") || (!whiteTurn && td.className[0]==="b")) td.classList.remove("possibleMoves");
+    
+    if((whiteTurn && td.className[0]==="b") || (!whiteTurn && td.className[0]==="w")){
+        td.classList.remove("possibleMoves");
+        td.classList.add("possibleEats");    
+    }
+}
+
+DOMTokenList.prototype.addMany = function(classes) {
+    var array = classes.split(' ');
+    for (var i = 0, length = array.length; i < length; i++) {
+      this.add(array[i]);
+    }
+}
+
+DOMTokenList.prototype.removeMany = function(classes) {
+    var array = classes.split(' ');
+    for (var i = 0, length = array.length; i < length; i++) {
+      this.remove(array[i]);
+    }
+}
+
+function kingIsCheckedAfterThisPieceMoves(x,y,piece){
+    if(piece[1] === "k") return;
+    if(whiteTurn){
+        tr[y].cells[x].classList.removeMany(piece);
+        whiteTurn = false;
+        checksIfKingsAreChecked("white");
+        tr[y].cells[x].classList.addMany(piece);
+        whiteTurn = true;
+        if(WhiteKingChecked) {
+            document.querySelector(".wk").classList.remove("kingIsChecked");
+            WhiteKingChecked = false;
+            return true;
+        }
+    }
+    else{
+        tr[y].cells[x].classList.removeMany(piece);
+        whiteTurn = true;
+        checksIfKingsAreChecked("black");
+        tr[y].cells[x].classList.addMany(piece);
+        whiteTurn = false;
+        if(BlackKingChecked){
+            document.querySelector(".wk").classList.remove("kingIsChecked");
+            BalckKingChecked = false;
+            return true;
+        }
+    }
+    return false;
 }
 
 function showRockMoves(x,y){
@@ -389,59 +488,105 @@ function showBishopMoves(x,y){
     } 
 }
 
-function regulatesMoves(td){
-    if((whiteTurn && td.className[0]==="w") || (!whiteTurn && td.className[0]==="b")) td.classList.remove("possibleMoves");
-    
-    if((whiteTurn && td.className[0]==="b") || (!whiteTurn && td.className[0]==="w")){
-        td.classList.remove("possibleMoves");
-        td.classList.add("possibleEats");
-        
-    }
-}
-
 function checksIfKingsAreChecked(color) {
+    kingsEnemies = [];
     if(color === "black"){
         enemies = document.querySelectorAll(".wp,.wr,.wn,.wb,.wq");
         for(var enemy of enemies){
-            debugger
-            possibleMoves(enemy.cellIndex,enemy.parentElement.rowIndex,enemy.classList[0]);
+            getPossibleMoves(enemy.cellIndex,enemy.parentElement.rowIndex,enemy.classList[0]);
             if(document.querySelector(".bk").classList.contains("possibleEats")){
-                document.querySelector(".bk").classList.add("kingIsChecked");
-                BlackKingChecked = true;
-                break;
-            }else BlackKingChecked = false;
+                kingsEnemies.push({"x" : enemy.cellIndex,"y" : enemy.parentElement.rowIndex,"piece" : enemy.classList[0]});
+            }
+            document.querySelectorAll('td').forEach(td => {
+                td.classList.remove("possibleMoves","possibleEats");   
+            });
+        }
+        if(!kingsEnemies.length) BlackKingChecked = false;
+        else {
+            document.querySelector(".bk").classList.add("kingIsChecked");
+            BlackKingChecked = true;
         }
     }else {
-        
         enemies = document.querySelectorAll(".bp,.br,.bn,.bb,.bq");
         for(var enemy of enemies){
-            possibleMoves(enemy.cellIndex,enemy.parentElement.rowIndex,enemy.classList[0]);
+            getPossibleMoves(enemy.cellIndex,enemy.parentElement.rowIndex,enemy.classList[0]);
             if(document.querySelector(".wk").classList.contains("possibleEats")){
-                document.querySelector(".wk").classList.add("kingIsChecked");
-                WhiteKingChecked = true;
-                break;
-            }else WhiteKingChecked = false;
+                kingsEnemies.push({"x" : enemy.cellIndex,"y" : enemy.parentElement.rowIndex,"piece" : enemy.classList[0]});
+            }
+            document.querySelectorAll('td').forEach(td => {
+                td.classList.remove("possibleMoves","possibleEats");   
+            });
         }
-    }
-        
-
-    document.querySelectorAll('td').forEach(td => {
-        td.classList.remove("possibleMoves","possibleEats");   
-    });
-     
+        if(!kingsEnemies.length) WhiteKingChecked = false;
+        else {
+            document.querySelector(".wk").classList.add("kingIsChecked");
+            WhiteKingChecked = true;
+        }
+    }    
 }
 
-function showPossibleMovesForCheckedKing(){
-    if(whiteTurn){
+function isPositionChecked(color,side){
+    if(color == "white"){
+        if(side == "right"){
+            //check if empty squares for castling are checked or not
+            //todo
+            
 
 
+
+        }
+
+
+    }
+
+
+
+}
+
+function findPossibleMovesForCheckedKing(){
+    possibleMovesForCheckedKing = [];
+    if(BlackKingChecked){
+        kingX = document.querySelector(".bk").cellIndex;
+        kingY = document.querySelector(".bk").parentElement.rowIndex;
     }
     else{
-        //blackKingisChecked todo
+        kingX = document.querySelector(".wk").cellIndex;
+        kingY = document.querySelector(".wk").parentElement.rowIndex;
     }
-
-    
-
+    for(var kingsEnemy of kingsEnemies){
+        while(kingX !== kingsEnemy.x || kingY !== kingsEnemy.y){
+            if(kingX < kingsEnemy.x){
+                kingX++;
+                if(kingY < kingsEnemy.y){
+                    kingY++;
+                }
+                else if(kingY > kingsEnemy.y){
+                    kingY--;
+                }
+                possibleMovesForCheckedKing.push({"x": kingX,"y":kingY});
+            }
+            else if(kingX > kingsEnemy.x){
+                kingX--;
+                if(kingY < kingsEnemy.y){
+                    kingY++;
+                }
+                else if(kingY > kingsEnemy.y){
+                    kingY--;
+                }
+                possibleMovesForCheckedKing.push({"x": kingX,"y":kingY});
+            }
+            else{
+                if(kingY < kingsEnemy.y){
+                    kingY++;
+                }
+                else if(kingY > kingsEnemy.y){
+                    kingY--;
+                }
+                possibleMovesForCheckedKing.push({"x": kingX,"y":kingY}); 
+            }
+        }
+        possibleMovesForCheckedKing.pop();
+    }
 }
 
 function promote(){
@@ -450,26 +595,34 @@ function promote(){
 }
 
 function castling(y){
-    if(y == 7 ){
-        if(!WhiteLeftRockHasMoved){
-            if(tr[y].cells[1].className.length === 0 && tr[y].cells[2].className.length === 0 && tr[y].cells[3].className.length === 0){
-                tr[y].cells[2].classList.add("possibleMoves");
+    if(y === 7){
+        if(!WhiteKingHasMoved){
+            if(!WhiteLeftRockHasMoved){
+                if(tr[y].cells[1].className.length === 0 && tr[y].cells[2].className.length === 0 && tr[y].cells[3].className === "possibleMoves"){
+                    castlingEnabled = true;
+                    tr[y].cells[2].classList.add("possibleMoves");
+                }
             }
-        }
-        if(!WhiteRightRockHasMoved){
-            if(tr[y].cells[5].className.length === 0 && tr[y].cells[6].className.length === 0 ){
-                tr[y].cells[6].classList.add("possibleMoves");
+            if(!WhiteRightRockHasMoved){
+                if(tr[y].cells[5].className === "possibleMoves" && tr[y].cells[6].className.length === 0 ){
+                    castlingEnabled = true;
+                    tr[y].cells[6].classList.add("possibleMoves");
+                }
             }
         } 
     }else {
-        if(!BlackLeftRockHasMoved){
-            if(tr[y].cells[5].className.length === 0 && tr[y].cells[6].className.length === 0 ){
-                tr[y].cells[6].classList.add("possibleMoves");
+        if(!BlackKingHasMoved){
+            if(!BlackLeftRockHasMoved){
+                if(tr[y].cells[1].className.length === 0 && tr[y].cells[2].className.length === 0 && tr[y].cells[3].className === "possibleMoves"){
+                    castlingEnabled = true;
+                    tr[y].cells[2].classList.add("possibleMoves");
+                }
             }
-        }
-        if(!BlackRightRockHasMoved){
-            if(tr[y].cells[1].className.length === 0 && tr[y].cells[2].className.length === 0 && tr[y].cells[3].className.length === 0){
-                tr[y].cells[2].classList.add("possibleMoves");
+            if(!BlackRightRockHasMoved){
+                if(tr[y].cells[5].className === "possibleMoves" && tr[y].cells[6].className.length === 0 ){
+                    castlingEnabled = true;
+                    tr[y].cells[6].classList.add("possibleMoves");
+                }
             }
         }
     }

@@ -100,5 +100,5 @@ tr:nth-of-type(even) td:nth-of-type(even){
     background-color:rgba(89, 187, 8, 0.555);
 }
 .kingIsChecked{
-    background-color:rgba(71, 17, 172, 0.897)!important;
+    background-color:rgba(71, 17, 172, 0.897);
 }
