@@ -72,6 +72,10 @@ for (let i = 0; i < 8; i++) {
 
 function buttonClick(e){
     if(e.target.classList.contains("possibleMoves") || e.target.classList.contains("possibleEats")){
+        if(BlackKingChecked || WhiteKingChecked){
+            BlackKingChecked,WhiteKingChecked = false;
+            document.querySelector(".kingIsChecked").classList.remove("kingIsChecked");
+        }
 
         if(document.getElementById("previousPosition")){
             document.getElementById("previousPosition").removeAttribute("id");
@@ -146,25 +150,6 @@ function buttonClick(e){
             });
         }
     } 
-    else if(BlackKingChecked || WhiteKingChecked){
-        findPossibleMovesForCheckedKing();
-        getPossibleMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.classList[0]);
-        document.querySelectorAll('td.possibleMoves').forEach(td => {
-            possibleMoves.push({"x": td.cellIndex,"y": td.parentElement.rowIndex});   
-        });
-
-        let results = possibleMoves.filter(o1 => !possibleMovesForCheckedKing.some(o2 => o1.x === o2.x && o1.y === o2.y));
-        for(var result of results){
-            tr[result.y].cells[result.x].classList.remove("possibleMoves");
-        }
-
-        document.querySelectorAll('td.possibleEats').forEach(td => {
-            for(var kingEnemy of kingsEnemies){
-                if(kingEnemy.x !== td.cellIndex || kingEnemy.y !== td.parentElement.rowIndex ) td.classList.remove("possibleEats");
-            }     
-        });
-
-    }
     else if(e.target.id === "active") return;
     else {
         if(document.getElementById("active")){
@@ -174,9 +159,29 @@ function buttonClick(e){
             });
         }
         e.target.id = "active";
-        if(kingIsCheckedAfterThisPieceMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.className)) return;
+        if(BlackKingChecked || WhiteKingChecked){
+            findPossibleMovesForCheckedKing();
+            getPossibleMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.classList[0]);
+            document.querySelectorAll('td.possibleMoves').forEach(td => {
+                possibleMoves.push({"x": td.cellIndex,"y": td.parentElement.rowIndex});   
+            });
+    
+            let results = possibleMoves.filter(o1 => !possibleMovesForCheckedKing.some(o2 => o1.x === o2.x && o1.y === o2.y));
+            for(var result of results){
+                tr[result.y].cells[result.x].classList.remove("possibleMoves");
+            }
+    
+            document.querySelectorAll('td.possibleEats').forEach(td => {
+                for(var kingEnemy of kingsEnemies){
+                    if(kingEnemy.x !== td.cellIndex || kingEnemy.y !== td.parentElement.rowIndex ) td.classList.remove("possibleEats");
+                }     
+            });
+    
+        }
+        else if(kingIsCheckedAfterThisPieceMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.className)) return;
         else getPossibleMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.classList[0]);
     }
+    
 }
 
 function getPossibleMoves(x,y,piece){
