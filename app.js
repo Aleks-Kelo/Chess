@@ -14,6 +14,8 @@ let kingsEnemies = [];
 let possibleMovesForCheckedKing = [];
 let possibleMoves = [];
 let castlingEnabled = false;
+let selectedPromotedPiece;
+
 
 
 
@@ -69,7 +71,6 @@ for (let i = 0; i < 8; i++) {
     table.appendChild(tr[i]);
 }
 
-
 function buttonClick(e){
     if(e.target.classList.contains("possibleMoves") || e.target.classList.contains("possibleEats")){
         if(BlackKingChecked || WhiteKingChecked){
@@ -84,7 +85,12 @@ function buttonClick(e){
         
         e.target.removeAttribute("class");
         e.target.classList.add(document.getElementById("active").classList[0]);
+        
 
+        if(document.getElementById("active").className[1] == "p" && (whiteTurn && document.getElementById("active").parentElement.rowIndex === 1 || !whiteTurn && document.getElementById("active").parentElement.rowIndex === 6))
+            promote();
+       
+         
 
         if(document.getElementById("active").className[1] == "r"){
             if(!BlackKingHasMoved){
@@ -145,18 +151,14 @@ function buttonClick(e){
     else if(e.target.className.length === 0 || (whiteTurn && e.target.className[0] === "b") || (!whiteTurn && e.target.className[0] === "w")){
         if(document.getElementById("active")){
             document.getElementById("active").removeAttribute("id");
-            document.querySelectorAll('td').forEach(td => {
-                td.classList.remove("possibleMoves","possibleEats");     
-            });
+            clearBoard();
         }
     } 
     else if(e.target.id === "active") return;
     else {
         if(document.getElementById("active")){
             document.getElementById("active").removeAttribute("id");
-            document.querySelectorAll('td').forEach(td => {
-                td.classList.remove("possibleMoves","possibleEats");   
-            });
+            clearBoard();
         }
         e.target.id = "active";
         if(BlackKingChecked || WhiteKingChecked){
@@ -182,6 +184,12 @@ function buttonClick(e){
         else getPossibleMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.classList[0]);
     }
     
+}
+
+function clearBoard(){
+    document.querySelectorAll("td.possibleMoves,td.possibleEats").forEach(td => {
+        td.classList.remove("possibleMoves","possibleEats");   
+    });
 }
 
 function getPossibleMoves(x,y,piece){
@@ -297,9 +305,7 @@ function getPossibleMoves(x,y,piece){
                     if(!kingMoves[2] && tr[y].cells[x+1].classList.contains("possibleMoves")) kingMoves[2] = true;
                 }
             }
-            document.querySelectorAll('td').forEach(td => {
-                td.classList.remove("possibleMoves","possibleEats");   
-            });   
+            clearBoard();   
         })
 
         if(tr[y].cells[x+2] !== undefined && tr[y].cells[x+2].className[1] === "k") kingMoves[1] = kingMoves[2] = kingMoves[3] = true;
@@ -502,9 +508,7 @@ function checksIfKingsAreChecked(color) {
             if(document.querySelector(".bk").classList.contains("possibleEats")){
                 kingsEnemies.push({"x" : enemy.cellIndex,"y" : enemy.parentElement.rowIndex,"piece" : enemy.classList[0]});
             }
-            document.querySelectorAll('td').forEach(td => {
-                td.classList.remove("possibleMoves","possibleEats");   
-            });
+            clearBoard();
         }
         if(!kingsEnemies.length) BlackKingChecked = false;
         else {
@@ -518,9 +522,7 @@ function checksIfKingsAreChecked(color) {
             if(document.querySelector(".wk").classList.contains("possibleEats")){
                 kingsEnemies.push({"x" : enemy.cellIndex,"y" : enemy.parentElement.rowIndex,"piece" : enemy.classList[0]});
             }
-            document.querySelectorAll('td').forEach(td => {
-                td.classList.remove("possibleMoves","possibleEats");   
-            });
+            clearBoard();
         }
         if(!kingsEnemies.length) WhiteKingChecked = false;
         else {
@@ -595,7 +597,38 @@ function findPossibleMovesForCheckedKing(){
 }
 
 function promote(){
-    //todo
+    let modal = document.createElement("div");
+    modal.className = "modal";
+    modal.style.display = "block";
+    let modalTable = document.createElement("table");
+    modalTable.className = "modal-content";
+    if(!whiteTurn){
+        promotePieces = ["bq","bb","bn","br"];
+    }else 
+    promotePieces = ["wr","wn","wb","wq"];
+    pieces = promotePieces.length;
+    let tr = [];
+    let td;
+    for (let i = 0; i < 2; i++) {
+        tr.push(document.createElement("tr"));
+        for (let j = 0; j < 2; j++) {
+            pieces--;
+            td = document.createElement("td");
+            td.className = promotePieces[pieces];
+            td.addEventListener("click",function(){
+                document.getElementById("currentPosition").removeAttribute("class");
+                document.getElementById("currentPosition").classList.add(selectedPromotedPiece);    
+                modal.style.display = "none";
+                //todo fix classname not being transmitted correctly
+            });
+            selectedPromotedPiece = td.className;
+            tr[i].appendChild(td);
+        }
+        modalTable.appendChild(tr[i]);
+    }
+    modal.appendChild(modalTable);
+    document.body.appendChild(modal);
+         
 
 }
 
@@ -632,3 +665,10 @@ function castling(y){
         }
     }
 }
+
+
+
+
+
+
+
