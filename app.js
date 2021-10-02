@@ -14,7 +14,7 @@ let kingsEnemies = [];
 let possibleMovesForCheckedKing = [];
 let possibleMoves = [];
 let castlingEnabled = false;
-let selectedPromotedPiece;
+
 
 
 
@@ -596,6 +596,7 @@ function findPossibleMovesForCheckedKing(){
     }
 }
 
+
 function promote(){
     let modal = document.createElement("div");
     modal.className = "modal";
@@ -606,7 +607,7 @@ function promote(){
         promotePieces = ["bq","bb","bn","br"];
     }else 
     promotePieces = ["wr","wn","wb","wq"];
-    pieces = promotePieces.length;
+    pieces = 4;
     let tr = [];
     let td;
     for (let i = 0; i < 2; i++) {
@@ -615,13 +616,11 @@ function promote(){
             pieces--;
             td = document.createElement("td");
             td.className = promotePieces[pieces];
-            td.addEventListener("click",function(){
+            td.addEventListener("click",function(e){
                 document.getElementById("currentPosition").removeAttribute("class");
-                document.getElementById("currentPosition").classList.add(selectedPromotedPiece);    
+                document.getElementById("currentPosition").classList.add(e.target.className);   
                 modal.style.display = "none";
-                //todo fix classname not being transmitted correctly
             });
-            selectedPromotedPiece = td.className;
             tr[i].appendChild(td);
         }
         modalTable.appendChild(tr[i]);
