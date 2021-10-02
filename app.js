@@ -627,8 +627,6 @@ function promote(){
     }
     modal.appendChild(modalTable);
     document.body.appendChild(modal);
-         
-
 }
 
 function castling(y){
