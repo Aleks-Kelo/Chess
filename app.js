@@ -9,11 +9,13 @@ let WhiteLeftRockHasMoved = false;
 let WhiteRightRockHasMoved = false;
 let BlackLeftRockHasMoved = false;
 let BlackRightRockHasMoved = false;
-let kingMoves = [false, false, false, false, false, false, false, false];
+let kingMoves = [false, false, false, false, false, false, false, false,false,false];
 let kingsEnemies = [];
 let possibleMovesForCheckedKing = [];
 let possibleMoves = [];
 let castlingEnabled = false;
+let leftCastling = false;
+let rightCastling = false;
 
 
 
@@ -96,13 +98,13 @@ function buttonClick(e){
             if(!BlackKingHasMoved){
                 if(!whiteTurn && (!BlackLeftRockHasMoved || !BlackRightRockHasMoved)){
                     if(table.rows[0].cells[0].id === "active") BlackLeftRockHasMoved = true;
-                    if(table.rows[0].cells[7].id === "active") BlackRightRockHasMoved = true;
+                    else if(table.rows[0].cells[7].id === "active") BlackRightRockHasMoved = true;
                 }
             }
             if(!WhiteKingHasMoved){
                 if(whiteTurn && (!WhiteLeftRockHasMoved || !WhiteRightRockHasMoved)){
                     if(table.rows[7].cells[0].id === "active") WhiteLeftRockHasMoved = true;
-                    if(table.rows[7].cells[7].id === "active") WhiteRightRockHasMoved = true;
+                    else if(table.rows[7].cells[7].id === "active") WhiteRightRockHasMoved = true;
                 }
             }
         }
@@ -181,7 +183,10 @@ function buttonClick(e){
     
         }
         else if(kingIsCheckedAfterThisPieceMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.className)) return;
-        else getPossibleMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.classList[0]);
+        else {
+            getPossibleMoves(e.target.cellIndex,e.target.parentElement.rowIndex,e.target.classList[0]);
+            document.querySelectorAll('.possibleMoves').forEach(td => regulatesMoves(td));
+        }
     }
     
 }
@@ -193,7 +198,6 @@ function clearBoard(){
 }
 
 function getPossibleMoves(x,y,piece){
-    // if(whiteTurn && WhiteKingChecked  || !whiteTurn && BlackKingChecked) return;
     if(piece === "wp"){
         if(tr[y-1] === undefined) return;
         if(y == 6) moves = 3;
@@ -281,7 +285,9 @@ function getPossibleMoves(x,y,piece){
                 }
             }  
         }
-
+        
+        if(whiteTurn) whiteTurn = false;
+        else whiteTurn = true;
         document.querySelectorAll(opponents).forEach(opponent => {
             getPossibleMoves(opponent.cellIndex,opponent.parentElement.rowIndex,opponent.classList[0]);
             if(y > 0){
@@ -306,7 +312,12 @@ function getPossibleMoves(x,y,piece){
                 }
             }
             clearBoard();   
-        })
+        });
+        if(whiteTurn) whiteTurn = false;
+        else whiteTurn = true;
+
+
+        
 
         if(tr[y].cells[x+2] !== undefined && tr[y].cells[x+2].className[1] === "k") kingMoves[1] = kingMoves[2] = kingMoves[3] = true;
         else if(tr[y].cells[x-2] !== undefined && tr[y].cells[x-2].className[1] === "k") kingMoves[5] = kingMoves[6] = kingMoves[7] = true;
@@ -332,7 +343,43 @@ function getPossibleMoves(x,y,piece){
                 else if(tr[y+2].cells[x-2] !== undefined && tr[y+2].cells[x-2].className[1] === "k") kingMoves[5] = true; 
             }
         }
-        
+        if(whiteTurn){
+            if(!WhiteKingHasMoved){
+                if(!WhiteLeftRockHasMoved){
+                    if(tr[y].cells[1].className.length === 0 && tr[y].cells[2].className.length === 0 && !kingMoves[6]){
+                        leftCastling = true;
+                        isPositionChecked(2);
+                        if(!leftCastling) kingMoves[9] = true;
+                    }
+                }
+                if(!WhiteRightRockHasMoved){
+                    if(!kingMoves[2] && tr[y].cells[6].className.length === 0 ){
+                        rightCastling = true;
+                        isPositionChecked(6);
+                        if(!rightCastling) kingMoves[8] = true;
+                    }
+                }
+            }
+            else{
+                if(!BlackKingHasMoved){
+                    if(!BlackLeftRockHasMoved){
+                        if(tr[y].cells[1].className.length === 0 && tr[y].cells[2].className.length === 0 && tr[y].cells[3].className === "possibleMoves"){
+                            leftCastling = true;
+                            isPositionChecked(2);
+                            if(!leftCastling) kingMoves[9] = true;
+                        }
+                    }
+                    if(!BlackRightRockHasMoved){
+                        if(tr[y].cells[5].className === "possibleMoves" && tr[y].cells[6].className.length === 0 ){
+                            rightCastling = true;
+                            isPositionChecked(6);
+                            if(!rightCastling) kingMoves[8] = true;
+                        }
+                    }
+                }
+            }
+        }
+
         if(y > 0){
             if(!kingMoves[0]) tr[y-1].cells[x].classList.add("possibleMoves");
             if(x > 0) {
@@ -355,9 +402,11 @@ function getPossibleMoves(x,y,piece){
                 if(!kingMoves[2]) tr[y].cells[x+1].classList.add("possibleMoves");
             }
         }
-        if(whiteTurn && !WhiteKingHasMoved || !whiteTurn && !BlackKingHasMoved) castling(y);
-          
-    }document.querySelectorAll('.possibleMoves').forEach(td => regulatesMoves(td));
+        if(!kingMoves[8]) tr[y].cells[6].classList.add("possibleMoves");
+        if(!kingMoves[9]) tr[y].cells[2].classList.add("possibleMoves");
+        
+        // if(whiteTurn && !WhiteKingHasMoved || !whiteTurn && !BlackKingHasMoved) castling(y);
+    }
 }
 
 function regulatesMoves(td){
@@ -532,22 +581,36 @@ function checksIfKingsAreChecked(color) {
     }    
 }
 
-function isPositionChecked(color,side){
-    if(color == "white"){
-        if(side == "right"){
-            //check if empty squares for castling are checked or not
-            //todo
-            
+function isPositionChecked(x){
+    clearBoard();
+    if(whiteTurn){
+        enemies = document.querySelectorAll(".bp,.br,.bn,.bb,.bq");
+        for(var enemy of enemies){
+            getPossibleMoves(enemy.cellIndex,enemy.parentElement.rowIndex,enemy.classList[0]);
+            if(tr[7].cells[x].classList.contains("possibleMoves")){
+                if(x == 2) leftCastling = false;
+                else rightCastling = false;
+                clearBoard();
+                break;
+            }
+            clearBoard();
+        }
+    }
+    else {
 
-
-
+        enemies = document.querySelectorAll(".wp,.wr,.wn,.wb,.wq");
+        for(var enemy of enemies){
+            getPossibleMoves(enemy.cellIndex,enemy.parentElement.rowIndex,enemy.classList[0]);
+            if(tr[0].cells[x].classList.contains("possibleMoves")){
+                if(x == 2) leftCastling = false;
+                else rightCastling = false;
+                clearBoard();
+                break;
+            }
+            clearBoard();
         }
 
-
     }
-
-
-
 }
 
 function findPossibleMovesForCheckedKing(){
@@ -596,7 +659,6 @@ function findPossibleMovesForCheckedKing(){
     }
 }
 
-
 function promote(){
     let modal = document.createElement("div");
     modal.className = "modal";
@@ -634,38 +696,63 @@ function castling(y){
         if(!WhiteKingHasMoved){
             if(!WhiteLeftRockHasMoved){
                 if(tr[y].cells[1].className.length === 0 && tr[y].cells[2].className.length === 0 && tr[y].cells[3].className === "possibleMoves"){
-                    castlingEnabled = true;
-                    tr[y].cells[2].classList.add("possibleMoves");
+                    leftCastling = true;
+                    // isPositionChecked(2);
+                    // if(castlingEnabled) {
+                    //     tr[y].cells[2].classList.add("possibleMoves");
+                    //     tr[y].cells[3].classList.add("possibleMoves");
+                    // }
                 }
             }
             if(!WhiteRightRockHasMoved){
                 if(tr[y].cells[5].className === "possibleMoves" && tr[y].cells[6].className.length === 0 ){
-                    castlingEnabled = true;
-                    tr[y].cells[6].classList.add("possibleMoves");
+                    rightCastling = true;
+                    // isPositionChecked(6);
+                    // if(castlingEnabled) {
+                    //     tr[y].cells[6].classList.add("possibleMoves");
+                    //     tr[y].cells[5].classList.add("possibleMoves");
+                    // }
                 }
             }
+            
+            
         } 
     }else {
         if(!BlackKingHasMoved){
             if(!BlackLeftRockHasMoved){
                 if(tr[y].cells[1].className.length === 0 && tr[y].cells[2].className.length === 0 && tr[y].cells[3].className === "possibleMoves"){
-                    castlingEnabled = true;
-                    tr[y].cells[2].classList.add("possibleMoves");
+                    leftCastling = true;
+                    // isPositionChecked(2);
+                    // if(castlingEnabled) {
+                    //     tr[y].cells[2].classList.add("possibleMoves");
+                    //     tr[y].cells[3].classList.add("possibleMoves");
+                    // }
                 }
             }
             if(!BlackRightRockHasMoved){
                 if(tr[y].cells[5].className === "possibleMoves" && tr[y].cells[6].className.length === 0 ){
-                    castlingEnabled = true;
-                    tr[y].cells[6].classList.add("possibleMoves");
+                    rightCastling = true;
+                    // isPositionChecked(6);
+                    // if(castlingEnabled) {
+                    //     tr[y].cells[6].classList.add("possibleMoves");
+                    //     tr[y].cells[5].classList.add("possibleMoves");
+                    // }
                 }
             }
         }
     }
+    if(rightCastling){
+        isPositionChecked(6);
+        if(castlingEnabled){
+            tr[y].cells[6].classList.add("possibleMoves");
+            tr[y].cells[5].classList.add("possibleMoves");
+        }
+    } 
+    if(leftCastling) {
+        isPositionChecked(2);
+        if(castlingEnabled){
+            tr[y].cells[2].classList.add("possibleMoves");
+            tr[y].cells[3].classList.add("possibleMoves");
+        }
+    }
 }
-
-
-
-
-
-
-
